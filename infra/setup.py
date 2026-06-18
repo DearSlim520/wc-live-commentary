@@ -84,7 +84,32 @@ try:
             Bucket=bucket,
             CreateBucketConfiguration={"LocationConstraint": region},
         )
-    # Enable static website hosting
+    print(f"✓ S3 bucket '{bucket}' created")
+except s3.exceptions.BucketAlreadyOwnedByYou:
+    print(f"✓ S3 bucket '{bucket}' already exists")
+except Exception as e:
+    if "BucketAlreadyExists" in str(e):
+        print(f"⚠ S3 bucket name '{bucket}' is taken globally. Choose a unique name.")
+    else:
+        raise
+
+# Disable Block Public Access so we can set a public policy
+try:
+    s3.put_public_access_block(
+        Bucket=bucket,
+        PublicAccessBlockConfiguration={
+            "BlockPublicAcls": False,
+            "IgnorePublicAcls": False,
+            "BlockPublicPolicy": False,
+            "RestrictPublicBuckets": False,
+        },
+    )
+    print(f"✓ S3 Block Public Access disabled for '{bucket}'")
+except Exception as e:
+    print(f"⚠ Could not disable Block Public Access: {e}")
+
+# Enable static website hosting
+try:
     s3.put_bucket_website(
         Bucket=bucket,
         WebsiteConfiguration={
@@ -108,14 +133,9 @@ try:
             }
         ),
     )
-    print(f"✓ S3 bucket '{bucket}' created with static hosting")
-except s3.exceptions.BucketAlreadyOwnedByYou:
-    print(f"✓ S3 bucket '{bucket}' already exists, skipping")
+    print(f"✓ S3 static website hosting + public policy configured")
 except Exception as e:
-    if "BucketAlreadyExists" in str(e):
-        print(f"⚠ S3 bucket name '{bucket}' is taken globally. Choose a unique name.")
-    else:
-        raise
+    print(f"⚠ S3 website/policy config error: {e}")
 
 # 5. IAM role for Lambda
 trust = {

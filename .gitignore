@@ -5,3 +5,5 @@ __pycache__/
 .DS_Store
 node_modules/
 lambda.zip
+ws_lambda.zip
+venv/
